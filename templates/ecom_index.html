@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EcomAssist | AI Customer Support</title>
+<meta name="color-scheme" content="light dark">
+<style>
+.header-actions {
+display: flex;
+align-items: center;
+gap: 8px;
+}
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  color-scheme: dark;
+  --bg: #101116;
+  --surface: #171920;
+  --surface-raised: #1d2029;
+  --surface-soft: #232631;
+  --ink: #f1f0f7;
+  --muted: #a1a4b5;
+  --line: #303341;
+  --accent: #b6a1ff;
+  --accent-strong: #9a7bff;
+  --accent-soft: rgba(182,161,255,.13);
+  --success: #80d8ba;
+  --error-bg: #2a1d27;
+  --error-ink: #ffb5c3;
+  --error-line: #67404e;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --sans: "Manrope", "Avenir Next", sans-serif;
+  --display: "Space Grotesk", "Manrope", sans-serif;
+  --mono: "DM Mono", monospace;
+  --shadow-sm: 0 1px 0 rgba(255,255,255,.025);
+  --content-width: 1080px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+html { background: var(--bg); }
+body {
+  color: var(--ink); background: var(--bg); font: 400 15px/1.65 var(--sans);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% -18%, rgba(122,95,207,.16), transparent 55%),
+              linear-gradient(180deg, rgba(255,255,255,.015), transparent 35%);
+}
+button, textarea { font: inherit; color: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+::selection { color: #111116; background: var(--accent); }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+.app {
+  position: relative; z-index: 1; display:flex; flex-direction:column; align-items:center;
+  width:100%; height:100vh; height:100dvh; padding:clamp(10px,2vw,24px);
+  gap:14px; isolation:isolate;
+}
+.app-header {
+  flex:none; width:100%; max-width:var(--content-width); display:flex; align-items:center;
+  justify-content:space-between; gap:16px; padding:8px 0 16px;
+  border-bottom:1px solid var(--line);
+}
+.brand { display:flex; align-items:center; gap:12px; min-width:0; }
+.brand-mark { width:38px; height:38px; flex:none; }
+.brand-name { margin:0; font:700 1.08rem/1.15 var(--display); letter-spacing:-.04em; }
+.brand-sub { margin:4px 0 0; color:var(--muted); font-size:.76rem; letter-spacing:.035em; }
+.btn-exit {
+  border:1px solid var(--line); border-radius:var(--radius-sm); padding:8px 13px;
+  color:var(--muted); background:transparent; font-size:.84rem; font-weight:700;
+  cursor:pointer; transition:color .18s,border-color .18s,background .18s;
+}
+.btn-exit:hover { color:var(--ink); border-color:#666078; background:rgba(255,255,255,.035); }
+.chat {
+  flex:1; min-height:0; width:100%; max-width:var(--content-width); display:flex;
+  flex-direction:column; overflow:hidden; background:rgba(23,25,32,.88);
+  border:1px solid var(--line); border-radius:var(--radius-lg);
+  box-shadow:0 18px 70px rgba(0,0,0,.15);
+}
+.conversation {
+  flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+  padding:clamp(18px,4vw,42px) clamp(12px,4vw,54px) 28px;
+  display:flex; flex-direction:column; gap:26px; scroll-behavior:smooth;
+  scrollbar-color:#444151 transparent; scrollbar-width:thin;
+}
+.welcome {
+  margin:auto 0; padding:36px 0 48px; display:flex; flex-direction:column;
+  align-items:center; text-align:center; animation:welcome-in .5s ease-out both;
+}
+@keyframes welcome-in { from {opacity:0;transform:translateY(8px)} to {opacity:1;transform:none} }
+.welcome-mark { width:64px; height:64px; }
+.welcome-name { margin:20px 0 0; color:var(--accent); font:500 .75rem/1.4 var(--mono); letter-spacing:.12em; text-transform:uppercase; }
+.welcome h2 {
+  margin:12px 0 12px; max-width:15ch; font:600 clamp(2rem,5vw,3.65rem)/1.03 var(--display);
+  letter-spacing:-.065em; text-wrap:balance;
+}
+.welcome > p:not(.welcome-name) { margin:0; max-width:42ch; color:var(--muted); font-size:clamp(.92rem,1.5vw,1.03rem); }
+.topics { list-style:none; margin:28px 0 0; padding:0; display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+.topics li {
+  display:inline-flex; align-items:center; gap:8px; padding:8px 12px;
+  color:#d6d2e5; background:#1d2028; border:1px solid #343643;
+  border-radius:999px; font-size:.82rem; font-weight:600;
+}
+.topics svg { width:16px; height:16px; color:var(--accent); flex:none; }
+
+.message { display:flex; align-items:flex-start; gap:12px; max-width:100%; min-width:0; }
+.message.user { justify-content:flex-end; }
+.avatar { flex:none; width:30px; height:30px; margin-top:3px; }
+.avatar svg { width:100%; height:100%; display:block; }
+.avatar-error { border-radius:9px; background:var(--error-bg); color:var(--error-ink); display:grid; place-items:center; font-weight:800; }
+.bubble-wrap { min-width:0; max-width:min( min(78ch, 86%), 100%); }
+.message.user .bubble-wrap { max-width:min(76%, 78ch); }
+.bubble {
+  min-width:0; overflow-wrap:anywhere; word-break:normal; white-space:pre-wrap;
+  line-height:1.72;
+}
+.message.user .bubble {
+  padding:11px 16px; background:#2a2637; border:1px solid #49405e;
+  border-radius:17px 17px 5px 17px; color:#f5f1ff;
+}
+.message.assistant .bubble {
+  padding:2px 0; color:#e8e7ef;
+}
+.message.assistant .bubble p { margin:0 0 .72em; }
+.message.assistant .bubble p:last-child { margin-bottom:0; }
+.message.assistant .bubble h1,.message.assistant .bubble h2,.message.assistant .bubble h3 {
+  margin:.3em 0 .55em; color:#fbfaff; font-family:var(--display); line-height:1.28; letter-spacing:-.025em;
+}
+.message.assistant .bubble h1 { font-size:1.24rem; }
+.message.assistant .bubble h2 { font-size:1.12rem; }
+.message.assistant .bubble h3 { font-size:1rem; }
+.message.assistant .bubble ul { margin:.25em 0 .8em; padding-left:1.35em; }
+.message.assistant .bubble li { margin:.24em 0; padding-left:.1em; }
+.message.assistant .bubble strong { color:#fff; font-weight:800; }
+.message.assistant .bubble hr { border:0; border-top:1px solid var(--line); margin:18px 0; }
+.message.assistant .bubble code {
+  padding:.12em .38em; border-radius:5px; background:#292b36; color:#d4c8ff;
+  font: .9em var(--mono); overflow-wrap:anywhere;
+}
+.message.assistant .bubble table { display:block; max-width:100%; overflow-x:auto; border-collapse:collapse; font-size:.88rem; }
+.message.assistant .bubble th,.message.assistant .bubble td { padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; }
+.message.assistant .bubble th { color:#e9e3ff; background:#20222c; }
+.message.error .bubble {
+  padding:12px 15px; border:1px solid var(--error-line); border-radius:12px;
+  background:var(--error-bg); color:var(--error-ink);
+}
+.caret { display:inline-block; width:2px; height:1.05em; margin-left:2px; vertical-align:-.15em; background:var(--accent); animation:blink 1s steps(2,start) infinite; }
+@keyframes blink { to { visibility:hidden } }
+.thinking { display:flex; align-items:center; gap:10px; padding:6px 0; color:var(--muted); font-size:.9rem; }
+.dots { display:inline-flex; gap:4px; }
+.dots span { width:5px; height:5px; border-radius:50%; background:var(--accent); animation:pulse 1.2s infinite ease-in-out; }
+.dots span:nth-child(2) { animation-delay:.15s; } .dots span:nth-child(3) { animation-delay:.3s; }
+@keyframes pulse { 0%,80%,100% {opacity:.22} 40% {opacity:1} }
+
+.composer-area { flex:none; padding:16px clamp(12px,3vw,32px) max(16px,env(safe-area-inset-bottom)); border-top:1px solid var(--line); background:rgba(20,22,29,.96); }
+.composer {
+  display:flex; align-items:flex-end; gap:10px; width:100%; max-width:900px; margin:0 auto;
+  padding:8px 8px 8px 16px; background:#171920; border:1px solid #3a3c49;
+  border-radius:15px; transition:border-color .2s,background .2s,box-shadow .2s;
+}
+.composer:focus-within { border-color:#8e78d9; box-shadow:0 0 0 3px rgba(182,161,255,.10); }
+.composer.is-typing { border-color:#62558b; }
+.composer.is-generating { opacity:.76; }
+.composer.is-error { border-color:#a85d70; box-shadow:0 0 0 3px rgba(255,181,195,.08); }
+.composer textarea {
+  flex:1; min-width:0; border:0; outline:0; resize:none; background:transparent;
+  padding:8px 0; max-height:160px; line-height:1.55; color:var(--ink);
+}
+.composer textarea::placeholder { color:#818494; }
+.send-btn {
+  flex:none; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  min-height:42px; padding:10px 15px; border:1px solid #a997ee; border-radius:10px;
+  background:var(--accent); color:#17131f; font-weight:800; font-size:.85rem; cursor:pointer;
+  transition:transform .16s,background .16s,opacity .16s;
+}
+.send-btn:hover:not(:disabled) { background:#c7b8ff; transform:translateY(-1px); }
+.send-btn:active:not(:disabled) { transform:translateY(0); }
+.send-btn:disabled { opacity:.34; cursor:not-allowed; }
+.send-btn svg { width:17px; height:17px; }
+.composer-note { max-width:900px; margin:9px auto 0; min-height:1.3em; color:#8f91a2; font-size:.74rem; }
+.analytics-charts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; width:100%; margin:8px 0 0; }
+.analytics-card {
+  min-width:0; width:100%; margin:0; padding:16px; background:#191b23;
+  border:1px solid #343643; border-radius:14px;
+}
+.analytics-card h3 { margin:0 0 12px; color:#f0edf9; font:600 .94rem/1.4 var(--display); }
+.analytics-card > canvas { display:block; width:100%!important; height:240px!important; max-height:240px; }
+.chart-wrap { position:relative; width:100%; min-width:0; }
+.chart-wrap canvas { display:block; width:100%!important; height:100%!important; }
+.analytics-card.wide,.analytics-card.category-chart { grid-column:1/-1; }
+.chart-note { margin:8px 0 0; color:var(--muted); font-size:.78rem; }
+@media (min-width:1500px) {
+  .app-header,.chat { max-width:1200px; }
+  .conversation { padding-left:clamp(54px,7vw,100px); padding-right:clamp(54px,7vw,100px); }
+  .composer-area { padding-left:40px; padding-right:40px; }
+}
+@media (max-width:640px) {
+  body { font-size:14px; }
+  .app { padding:8px; gap:8px; }
+  .app-header { padding:4px 2px 12px; }
+  .brand-mark { width:32px; height:32px; }
+  .brand-sub { font-size:.7rem; }
+  .btn-exit { padding:7px 10px; }
+  .chat { border-radius:16px; }
+  .conversation { padding:20px 12px 22px; gap:20px; }
+  .welcome { padding:20px 0 28px; }
+  .welcome-mark { width:54px; height:54px; }
+  .welcome h2 { font-size:clamp(1.9rem,9vw,2.7rem); }
+  .welcome > p:not(.welcome-name) { max-width:32ch; font-size:.9rem; }
+  .topics { gap:6px; margin-top:22px; }
+  .topics li { padding:7px 9px; font-size:.76rem; }
+  .message { gap:8px; }
+  .avatar { width:25px; height:25px; }
+  .bubble-wrap { max-width:calc(100% - 33px); }
+  .message.user .bubble-wrap { max-width:88%; }
+  .message.user .bubble { padding:10px 12px; }
+  .composer-area { padding:10px 10px max(12px,env(safe-area-inset-bottom)); }
+  .composer { gap:6px; padding-left:12px; border-radius:13px; }
+  .send-btn { min-height:40px; padding:9px 11px; }
+  .send-btn .send-label { display:none; }
+  .analytics-charts { grid-template-columns:minmax(0,1fr); gap:10px; }
+  .analytics-card.wide,.analytics-card.category-chart { grid-column:auto; }
+  .analytics-card { padding:12px; }
+}
+@media (max-width:360px) {
+  .app { padding:5px; gap:6px; }
+  .conversation { padding:16px 8px; }
+  .message { gap:6px; }
+  .avatar { width:22px; height:22px; }
+  .bubble-wrap { max-width:calc(100% - 28px); }
+  .message.user .bubble-wrap { max-width:90%; }
+  .composer-note { font-size:.68rem; }
+}
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; transition-duration:.01ms!important; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- Shared SVG definitions: gradient and the EcomAssist logo mark -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1">
+      
+    <stop offset="0" stop-color="#A99AE8"/>
+    <stop offset="1" stop-color="#8875D4"/>
+
+    </linearGradient>
+    <symbol id="logo" viewBox="0 0 34 34">
+      <rect width="34" height="34" rx="10" fill="url(#brandGrad)"/>
+      <g fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9.5 13h15l-1.2 12h-12.6z"/>
+        <path d="M13.2 13v-1.4a3.8 3.8 0 0 1 7.6 0V13"/>
+        <path d="M14 19.2q3 2.6 6 0"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="app" id="appShell">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 34 34" aria-hidden="true"><use href="#logo"/></svg>
+      <div>
+        <h1 class="brand-name">EcomAssist</h1>
+        <p class="brand-sub">AI Customer Support</p>
+      </div>
+    </div>
+    <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
+      <button id="exitBtn" type="button">Exit</button>
+      <form action="/logout" method="POST" style="margin: 0;">
+        <button type="submit" id="logoutBtn">Logout</button>
+      </form>
+    </div>
+  </header>
+
+  <!-- Chat workspace -->
+  <main class="chat">
+    <section class="conversation" id="conversation" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Chat conversation" tabindex="0">
+
+      <!-- Welcome state: removed once the first message is sent -->
+      <div class="welcome" id="welcome">
+        <svg class="welcome-mark" viewBox="0 0 34 34" aria-hidden="true"><use href="#logo"/></svg>
+        <p class="welcome-name">EcomAssist</p>
+        <h2>How can we help you today?</h2>
+        <p>Ask about an order, refund, return, delivery, policy, or complaint.</p>
+
+        <ul class="topics" aria-label="Topics we can help with">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5zM3 7.5 12 12l9-4.5M12 12v9"/></svg>Orders</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></svg>Returns</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18v12H3zM3 10h18M7 15h3"/></svg>Refunds</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h11v10H2zM13 9h4l3 3v4h-7"/><circle cx="6.5" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg>Delivery</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Complaints</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Composer -->
+    <div class="composer-area">
+      <form class="composer" id="chatForm" autocomplete="off" aria-label="Send a message">
+        <label for="messageInput" class="sr-only">Your message</label>
+        <textarea id="messageInput" rows="1" placeholder="Ask about an order, refund or delivery…" maxlength="2000" aria-describedby="composerNote" aria-label="Message to EcomAssist"></textarea>
+        <button type="submit" class="send-btn" id="sendBtn" disabled aria-label="Send message">
+          <span class="send-label">Send</span>
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h13M11 4l6 6-6 6"/></svg>
+          <span class="sr-only">message</span>
+        </button>
+      </form>
+      <p class="composer-note" id="composerNote" role="status" aria-live="polite">Press Enter to send, Shift + Enter for a new line.</p>
+    </div>
+  </main>
+</div>
+
+<script>
+
+
+  // ---------- Element references ----------
+  const conversation = document.getElementById("conversation");
+  const welcome = document.getElementById("welcome");
+  const form = document.getElementById("chatForm");
+  const input = document.getElementById("messageInput");
+  const sendBtn = document.getElementById("sendBtn");
+  const note = document.getElementById("composerNote");
+  const exitBtn = document.getElementById("exitBtn");
+
+  const DEFAULT_NOTE = "Press Enter to send, Shift + Enter for a new line.";
+  const ERROR_TEXT = "Sorry, I couldn't process your request. Please try again.";
+  const LOGO_AVATAR = '<svg viewBox="0 0 34 34" aria-hidden="true"><use href="#logo"/></svg>';
+  let isWaiting = false;
+
+  // ---------- Helpers ----------
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Safely render the basic Markdown commonly returned by the support agents.
+  // Escape HTML first so generated answers cannot inject arbitrary HTML.
+  function escapeHTML(value) {
+    return value.replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[character]);
+  }
+
+  function formatInline(text) {
+    return text
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/__(.+?)__/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>")
+      .replace(/_(.+?)_/g, "<em>$1</em>")
+      .replace(/`([^`]+)`/g, "<code>$1</code>");
+  }
+
+
+  
+  function renderMarkdownTable(rows) {
+      const parsedRows = rows.map(row =>
+          row.trim()
+              .replace(/^\\?\|/, "")
+              .replace(/\\?\|$/, "")
+              .split(/(?<!\\)\|/)
+              .map(cell => cell.replace(/\\\|/g, "|").trim())
+      );
+
+      if (parsedRows.length < 2) return null;
+
+      // Markdown separator row, e.g. |---|---|
+      const isSeparator = cell => /^:?-{3,}:?$/.test(cell);
+
+      const separatorIndex = parsedRows.findIndex(row =>
+          row.length > 0 && row.every(isSeparator)
+      );
+
+      if (separatorIndex !== 1) return null;
+
+      const headers = parsedRows[0];
+      const bodyRows = parsedRows.slice(2);
+
+      const table = document.createElement("table");
+      table.style.width = "100%";
+      table.style.borderCollapse = "collapse";
+      table.style.margin = "10px 0";
+
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+
+      headers.forEach(text => {
+          const th = document.createElement("th");
+          th.textContent = text;
+          th.style.textAlign = "left";
+          th.style.padding = "8px";
+          th.style.borderBottom = "2px solid var(--line)";
+          headerRow.appendChild(th);
+      });
+
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      bodyRows.forEach(row => {
+          const tr = document.createElement("tr");
+
+          headers.forEach((_, index) => {
+              const td = document.createElement("td");
+              td.textContent = (row[index] || "").replace(/\\\|/g, "|");
+              td.style.padding = "8px";
+              td.style.borderBottom = "1px solid var(--line)";
+              tr.appendChild(td);
+          });
+
+          tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      return table;
+  }
+
+  function renderMarkdown(markdown) {
+    const lines = escapeHTML(markdown).split(/\r?\n/);
+    const output = [];
+    const tableRows = [];
+    let inList = false;
+
+    function closeList() {
+      if (inList) {
+        output.push("</ul>");
+        inList = false;
+      }
+    }
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+
+      const isTableLine =
+          line.includes("|") &&
+          /^\s*\\?\|/.test(line) &&
+          (line.match(/\\?\|/g) || []).length >= 2;
+
+      if (isTableLine) {
+          closeList();
+          tableRows.push(line);
+          continue;
+      }
+
+      if (!line) {
+          closeList();
+          continue;
+      }
+
+      const bullet = line.match(/^[-*]\s+(.+)$/);
+      if (bullet) {
+        if (!inList) {
+          output.push("<ul>");
+          inList = true;
+        }
+        output.push("<li>" + formatInline(bullet[1]) + "</li>");
+        continue;
+      }
+
+      closeList();
+
+      // Render horizontal dividers such as ---
+      if (/^---+$/.test(line)) {
+        output.push("<hr>");
+        continue;
+      }
+
+      const heading = line.match(/^(#{1,3})\s+(.+)$/);
+      if (heading) {
+        const level = heading[1].length;
+        output.push("<h" + level + ">" + formatInline(heading[2]) + "</h" + level + ">");
+      } else {
+        output.push("<p>" + formatInline(line) + "</p>");
+      }
+    }
+
+    if (tableRows.length > 0) {
+      const table = renderMarkdownTable(tableRows);
+
+      if (table) {
+          output.push(table.outerHTML);
+      } else {
+          output.push(
+              ...tableRows.map(row => "<p>" + formatInline(row) + "</p>")
+          );
+      }
+
+      tableRows.length = 0;
+  }
+    closeList();
+    return output.join("");
+  }
+
+  
+  
+  
+  
+  function addAnalyticsCharts(
+  chartData,
+  question = "",
+  chartType = "none"
+  ) {
+    if (!chartData || typeof Chart === "undefined") {
+      return;
+    }
+
+    console.log("Analytics chart data received:", chartData);
+
+    console.log(
+        "Monthly spending labels:",
+        chartData.monthly_spending?.labels
+    );
+
+    console.log(
+        "Monthly spending values:",
+        chartData.monthly_spending?.values
+    );
+
+    const questionLower = question.toLowerCase();
+
+    const isCompleteAnalysis = [
+      "complete analysis",
+      "full analysis",
+      "overall analysis",
+      "complete spending",
+      "all spending",
+      "all charts"
+    ].some(term => questionLower.includes(term));
+
+    const definitions = [
+      {
+        key: "monthly_spending",
+        title: "Monthly Spending",
+        type: "line",
+        color: "#8875D4",
+        money: true,
+        horizontal: false
+      },
+      {
+        key: "monthly_orders",
+        title: "Monthly Orders",
+        type: "bar",
+        color: "#A99AE8",
+        money: false,
+        horizontal: isCompleteAnalysis
+      },
+      {
+      key: "category_spending",
+      title: "Spending by Category",
+      type: ["pie", "bar"].includes(chartType)
+        ? chartType
+        : "bar",
+      color: "#8875D4",
+      money: true,
+      horizontal: chartType !== "pie"
+      }
+    ];
+
+    const availableCharts = definitions.filter(definition => {
+      const dataset = chartData[definition.key];
+
+      return (
+        dataset &&
+        Array.isArray(dataset.labels) &&
+        Array.isArray(dataset.values) &&
+        dataset.labels.length === dataset.values.length &&
+        dataset.labels.length > 0
+      );
+    });
+
+    if (availableCharts.length === 0) {
+      return;
+    }
+
+    const charts = document.createElement("div");
+    charts.className = "analytics-charts";
+    charts.setAttribute("role", "region");
+    charts.setAttribute("aria-label", "Analytics charts");
+
+    for (const definition of availableCharts) {
+      const dataset = chartData[definition.key];
+
+      const card = document.createElement("section");
+      card.className = "analytics-card";
+
+      if (definition.horizontal) {
+        card.classList.add("category-chart");
+      }
+
+      const heading = document.createElement("h3");
+      heading.textContent = definition.title;
+
+      const canvas = document.createElement("canvas");
+      canvas.setAttribute("role", "img");
+      canvas.setAttribute("aria-label", definition.title);
+
+      card.append(heading, canvas);
+      charts.appendChild(card);
+
+      new Chart(canvas, {
+        type: definition.type,
+        data: {
+          labels: dataset.labels,
+          datasets: [{
+          label: definition.title,
+          data: dataset.values,
+
+          borderColor: definition.key === "category_spending"
+            ? dataset.labels.map((_, index) => {
+                const colors = [
+                  "#4F46E5", // Indigo
+                  "#06B6D4", // Cyan
+                  "#800080", // Purple
+                  "#EA580C", // Orange
+                  "#DB2777", // Pink
+                  "#65A30D", // Green
+                  "#7C3AED", // Violet
+                  "#2563EB"  // Blue
+                ];
+                return colors[index % colors.length];
+              })
+            : definition.color,
+
+          backgroundColor: definition.key === "category_spending"
+            ? dataset.labels.map((_, index) => {
+                const colors = [
+                  "#4F46E5", // Indigo
+                  "#06B6D4", // Cyan
+                  "#800080", // Purple
+                  "#EA580C", // Orange
+                  "#DB2777", // Pink
+                  "#65A30D", // Green
+                  "#7C3AED", // Violet
+                  "#2563EB"  // Blue
+                ];
+                return colors[index % colors.length];
+              })
+            : definition.color,
+
+          borderWidth: 1,
+          tension: definition.key === "monthly_spending" ? 0.3 : 0,
+          fill: false,
+          pointRadius: definition.key === "monthly_spending" ? 2 : 0
+        }]
+        },
+        
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          ...(definition.type !== "pie" && {
+            indexAxis: definition.horizontal ? "y" : "x",
+            interaction: {
+              intersect: false,
+              mode: "index"
+            },
+            scales: {
+              x: {
+                beginAtZero: definition.horizontal,
+                ticks: {
+                  maxRotation: 45,
+                  minRotation: 0,
+                  autoSkip: true,
+                  maxTicksLimit: 10,
+                  callback(value) {
+                    return definition.horizontal && definition.money
+                      ? "₹" + Number(value).toLocaleString("en-IN")
+                      : this.getLabelForValue(value);
+                  }
+                }
+              },
+              y: {
+                beginAtZero: !definition.horizontal,
+                ticks: {
+                  callback(value) {
+                    return !definition.horizontal && definition.money
+                      ? "₹" + Number(value).toLocaleString("en-IN")
+                      : this.getLabelForValue(value);
+                  }
+                }
+              }
+            }
+          }),
+          plugins: {
+            legend: {
+              display: definition.type === "pie",
+              position: "bottom"
+            },
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  const value = Number(context.raw);
+                  const formatted = definition.money
+                    ? "₹" + value.toLocaleString("en-IN", {
+                        maximumFractionDigits: 2
+                      })
+                    : value.toLocaleString("en-IN");
+
+                  return definition.type === "pie"
+                    ? `${context.label}: ${formatted}`
+                    : `${formatted}`;
+                }
+              }
+            }
+          }
+        }
+
+      });
+    }
+
+    conversation.appendChild(charts);
+    scrollToLatest();
+  }
+
+
+
+  function scrollToLatest() {
+    conversation.scrollTo({ top: conversation.scrollHeight, behavior: prefersReducedMotion ? "auto" : "smooth" });
+  }
+
+  // Grow the textarea with its content, up to the CSS max-height
+  function autoResize() {
+    input.style.height = "auto";
+    input.style.height = input.scrollHeight + "px";
+  }
+
+  function updateSendState() {
+    sendBtn.disabled = isWaiting || input.value.trim() === "";
+    const composer = form;
+    composer.classList.toggle("is-generating", isWaiting);
+    composer.classList.toggle("is-typing", !isWaiting && input.value.trim() !== "");
+    composer.setAttribute("aria-busy", String(isWaiting));
+    sendBtn.setAttribute("aria-label", isWaiting ? "Generating response" : "Send message");
+  }
+
+  // ---------- Message rendering ----------
+  // Text is always inserted with textContent, never as HTML.
+  function addUserMessage(text) {
+    const row = document.createElement("div");
+    row.className = "message user";
+    row.innerHTML = '<div class="bubble-wrap"><div class="bubble"></div></div>';
+    row.querySelector(".bubble").textContent = text;
+    conversation.appendChild(row);
+    scrollToLatest();
+  }
+
+  function addAssistantMessage(text, isError = false) {
+    const row = document.createElement("div");
+    row.className = "message assistant" + (isError ? " error" : "");
+
+    const avatar = document.createElement("div");
+    avatar.setAttribute("aria-hidden", "true");
+    if (isError) {
+      avatar.className = "avatar avatar-error";
+      avatar.textContent = "!";
+    } else {
+      avatar.className = "avatar";
+      avatar.innerHTML = LOGO_AVATAR;
+    }
+
+    const wrap = document.createElement("div");
+    wrap.className = "bubble-wrap";
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+
+    row.append(avatar, wrap);
+    conversation.appendChild(row);
+    scrollToLatest();
+    return bubble;
+  }
+
+  // Types the reply into the bubble with a blinking caret.
+  // Speed scales with length so long answers finish in about 2.5 seconds.
+  let cancelTyping = null;
+  
+  function typeInto(bubble, text) {
+    return new Promise((resolve) => {
+      if (prefersReducedMotion) {
+        bubble.innerHTML = renderMarkdown(text);
+        scrollToLatest();
+        resolve();
+        return;
+      }
+
+      const chars = Array.from(text);
+      const step = Math.max(1, Math.ceil(chars.length / 150));
+      let shown = 0;
+      let frame;
+
+      const caret = document.createElement("span");
+      caret.className = "caret";
+      caret.setAttribute("aria-hidden", "true");
+
+      const finish = () => {
+        cancelAnimationFrame(frame);
+        cancelTyping = null;
+        bubble.innerHTML = renderMarkdown(text);
+        scrollToLatest();
+        resolve();
+      };
+
+      const tick = () => {
+        shown = Math.min(chars.length, shown + step);
+
+        // Render Markdown during typing instead of showing raw ** symbols.
+        bubble.innerHTML = renderMarkdown(chars.slice(0, shown).join(""));
+        bubble.appendChild(caret);
+
+        scrollToLatest();
+
+        if (shown >= chars.length) {
+          finish();
+        } else {
+          frame = requestAnimationFrame(tick);
+        }
+      };
+
+      cancelTyping = finish;
+      frame = requestAnimationFrame(tick);
+    });
+  }
+
+
+  function showThinking() {
+    const row = document.createElement("div");
+    row.className = "message assistant";
+    row.id = "thinking";
+    row.innerHTML =
+      '<div class="avatar" aria-hidden="true">' + LOGO_AVATAR + '</div>' +
+      '<div class="thinking"><span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>' +
+      '<span>EcomAssist is thinking...</span></div>';
+    conversation.appendChild(row);
+    scrollToLatest();
+  }
+
+  function hideThinking() {
+    const row = document.getElementById("thinking");
+    if (row) row.remove();
+  }
+
+
+  // ---------- Adaptive analytics chart ----------
+  // Tuning knobs for the automatic layout
+  const CHART_LIMITS = {
+    maxVerticalBars: 12,    // time series with more points than this becomes a line chart
+    maxHorizontalBars: 25,  // more categories than this: keep the top N and add a note
+    maxPieSlices: 7,        // more slices than this: top N plus "Others"
+    pieToBarAbove: 12,      // a pie with more categories than this becomes horizontal bars
+    rowHeight: 30,          // pixels per bar in a horizontal bar chart
+    minHeight: 260,
+    maxHeight: 760
+  };
+  const CHART_ACCENT = "#4F46E5";
+  const CHART_PALETTE = [
+    "#4F46E5", "#06B6D4", "#7C3AED", "#EA580C",
+    "#DB2777", "#65A30D", "#2563EB", "#CA8A04"
+  ];
+  const MONTH_LABEL = /^\d{4}-\d{2}$/;
+
+  // One colour per bar: the palette first, then evenly spaced hues for the rest.
+  function barColors(count) {
+    return Array.from({ length: count }, (_, index) =>
+      index < CHART_PALETTE.length
+        ? CHART_PALETTE[index]
+        : `hsl(${Math.round((index * 137.5) % 360)}, 62%, 52%)`
+    );
+  }
+
+  // "2024-03" -> "Mar 24" (short) or "March 2024" (long); other labels pass through.
+  function formatChartLabel(label, isMonthly, long = false) {
+    if (!isMonthly) return label;
+    const [year, month] = label.split("-").map(Number);
+    return new Date(year, month - 1, 1).toLocaleString("en-IN",
+      long ? { month: "long", year: "numeric" } : { month: "short", year: "2-digit" });
+  }
+
+  // Decide chart type, orientation, row set and height from the data itself.
+  function planChartLayout(labels, values, requestedType, explicit = false) {
+    const isMonthly = labels.every(label => MONTH_LABEL.test(label));
+    const longestLabel = Math.max(...labels.map(label => label.length));
+    let rows = labels.map((label, index) => ({ label, value: values[index] }));
+    let type = ["pie", "line"].includes(requestedType) ? requestedType : "bar";
+    let note = "";
+
+    const byValueDesc = (a, b) => b.value - a.value;
+
+    // Pie: too many slices are unreadable.
+    if (type === "pie") {
+      if (!explicit && rows.length > CHART_LIMITS.pieToBarAbove) {
+        type = "bar";
+      } else if (rows.length > CHART_LIMITS.maxPieSlices) {
+        rows.sort(byValueDesc);
+        const head = rows.slice(0, CHART_LIMITS.maxPieSlices);
+        const othersTotal = rows.slice(CHART_LIMITS.maxPieSlices)
+          .reduce((sum, row) => sum + row.value, 0);
+        rows = [...head, { label: "Others", value: othersTotal }];
+      }
+    }
+
+    // Time series stay in chronological order; many months read better as a line.
+    if (isMonthly && type !== "pie") {
+      rows.sort((a, b) => a.label.localeCompare(b.label));
+      if (!explicit && type === "bar" && rows.length > CHART_LIMITS.maxVerticalBars) type = "line";
+    }
+
+    // Categorical bars: horizontal when there are many bars or long labels.
+    let horizontal = false;
+    if (type === "bar" && !isMonthly) {
+      horizontal = rows.length > 8 || longestLabel > 12;
+      if (horizontal) {
+        rows.sort(byValueDesc);
+        if (rows.length > CHART_LIMITS.maxHorizontalBars) {
+          note = `Showing the top ${CHART_LIMITS.maxHorizontalBars} of ${rows.length} categories.`;
+          rows = rows.slice(0, CHART_LIMITS.maxHorizontalBars);
+        }
+      }
+    }
+
+    let height = 320;
+    if (horizontal) {
+      height = Math.min(CHART_LIMITS.maxHeight,
+        Math.max(CHART_LIMITS.minHeight, rows.length * CHART_LIMITS.rowHeight + 80));
+    } else if (type === "pie") {
+      height = 340;
+    }
+
+    return {
+      type,
+      horizontal,
+      isMonthly,
+      rows,
+      labels: rows.map(row => row.label),
+      values: rows.map(row => row.value),
+      height,
+      wide: type === "line" || (isMonthly && rows.length > 8),
+      showMarkers: rows.length <= 24,
+      note
+    };
+  }
+
+  function addDynamicAnalyticsChart(chartSpec, chartRows) {
+    if (
+      !chartSpec ||
+      !chartSpec.show_chart ||
+      !Array.isArray(chartRows) ||
+      chartRows.length === 0 ||
+      typeof Chart === "undefined"
+    ) {
+      return;
+    }
+
+    const { x_key, y_key, chart_type, title } = chartSpec;
+
+    if (!x_key || !y_key) {
+      console.warn("Chart specification is missing axis fields.");
+      return;
+    }
+
+    // Keep only rows with a label and a valid numeric value.
+    const validRows = chartRows.filter(row => {
+      if (!row || row[x_key] == null) return false;
+      const value = row[y_key];
+      return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
+    });
+
+    if (validRows.length === 0) {
+      console.warn("No valid values available for the chart.");
+      return;
+    }
+
+    const plan = planChartLayout(
+      validRows.map(row => String(row[x_key])),
+      validRows.map(row => Number(row[y_key])),
+      chart_type,
+      Boolean(chartSpec.type_requested)
+    );
+    const isPie = plan.type === "pie";
+    const moneyMetric = /spending|revenue|amount|total_spent|price/i.test(y_key);
+
+    // Theme colours come from the page's CSS variables.
+    const css = getComputedStyle(document.documentElement);
+    const textColor = css.getPropertyValue("--muted").trim() || "#5a6078";
+    const gridColor = css.getPropertyValue("--line").trim() || "rgba(60, 64, 120, 0.14)";
+    const surfaceColor = css.getPropertyValue("--surface").trim() || "#ffffff";
+    Chart.defaults.color = textColor;
+    Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+    Chart.defaults.font.size = 12;
+
+    // Build the card: heading, fixed-height wrapper, canvas, optional note.
+    const card = document.createElement("section");
+    card.className = "analytics-card" + (plan.wide ? " wide" : "");
+
+    const heading = document.createElement("h3");
+    heading.textContent = title || "Analytics Results";
+
+    const wrap = document.createElement("div");
+    wrap.className = "chart-wrap";
+    wrap.style.height = plan.height + "px";
+
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("role", "img");
+    canvas.setAttribute("aria-label", title || "Analytics chart");
+    wrap.appendChild(canvas);
+
+    card.append(heading, wrap);
+    const noteText = [plan.note, chartSpec.note].filter(Boolean).join(" ");
+    if (noteText) {
+      const noteEl = document.createElement("p");
+      noteEl.className = "chart-note";
+      noteEl.textContent = noteText;
+      card.appendChild(noteEl);
+    }
+
+    const charts = document.createElement("div");
+    charts.className = "analytics-charts";
+    charts.setAttribute("role", "region");
+    charts.setAttribute("aria-label", "Analytics charts");
+    charts.appendChild(card);
+    conversation.appendChild(charts);
+
+    const compact = new Intl.NumberFormat("en-IN", { notation: "compact", maximumFractionDigits: 1 });
+    const axisValue = v => (moneyMetric ? "₹" : "") + compact.format(Number(v));
+    const fullValue = v => (moneyMetric ? "₹" : "") +
+      Number(v).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+
+    // One accent colour for bars and lines; a palette only for pie slices.
+    const sliceColors = plan.labels.map((label, index) =>
+      label === "Others" ? "#9CA3AF" : CHART_PALETTE[index % CHART_PALETTE.length]);
+
+    const dataset = {
+      label: chartSpec.y_label || y_key.replace(/_/g, " "),
+      data: plan.values
+    };
+    if (isPie) {
+      Object.assign(dataset, {
+    backgroundColor: sliceColors,
+    borderColor: "transparent",
+    borderWidth: 0,
+    hoverBorderColor: "transparent",
+    hoverBorderWidth: 0
+    });
+    } else if (plan.type === "line") {
+      Object.assign(dataset, {
+        borderColor: CHART_ACCENT,
+        backgroundColor: "rgba(79, 70, 229, 0.10)",
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: plan.showMarkers ? 3 : 0,
+        pointHoverRadius: 5
+      });
+    } else {
+      Object.assign(dataset, {
+        backgroundColor: barColors(plan.values.length),
+        borderRadius: 4,
+        borderSkipped: false,
+        maxBarThickness: plan.horizontal ? 22 : 40,
+        barPercentage: 0.8,
+        categoryPercentage: 0.8
+      });
+    }
+
+    // In a horizontal bar chart the category axis is y, so the axis titles swap sides.
+    const categoryAxis = plan.horizontal ? "y" : "x";
+    const valueAxis = plan.horizontal ? "x" : "y";
+    const categoryTitle = chartSpec.x_label;
+    const valueTitle = chartSpec.y_label;
+
+    const scales = isPie ? {} : {
+      [categoryAxis]: {
+        type: "category",
+        offset: plan.type !== "line",
+        grid: { display: false },
+        border: { color: gridColor },
+        title: { display: Boolean(categoryTitle), text: categoryTitle },
+        ticks: {
+          autoSkip: !plan.horizontal,
+          autoSkipPadding: 14,
+          maxRotation: plan.horizontal || plan.isMonthly ? 0 : 45,
+          minRotation: 0,
+          callback(value) {
+            const label = formatChartLabel(this.getLabelForValue(value), plan.isMonthly);
+            return label.length > 24 ? label.slice(0, 23) + "…" : label;
+          }
+        }
+      },
+      [valueAxis]: {
+        beginAtZero: true,
+        grace: "5%",
+        grid: { color: gridColor },
+        border: { display: false },
+        title: { display: Boolean(valueTitle), text: valueTitle },
+        ticks: { maxTicksLimit: 6, callback: axisValue }
+      }
+    };
+
+    new Chart(canvas, {
+      type: plan.type,
+      data: { labels: plan.labels, datasets: [dataset] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: plan.horizontal ? "y" : "x",
+        interaction: { intersect: false, mode: isPie ? "nearest" : "index" },
+        scales,
+        plugins: {
+          legend: { display: isPie, position: "bottom", labels: { boxWidth: 12, padding: 14 } },
+          tooltip: {
+            callbacks: {
+              title(items) {
+                return formatChartLabel(plan.labels[items[0].dataIndex], plan.isMonthly, true);
+              },
+              label(context) {
+                if (!isPie) return fullValue(context.raw);
+                const total = context.dataset.data.reduce((sum, v) => sum + Number(v), 0);
+                const share = total > 0 ? (Number(context.raw) / total * 100).toFixed(1) : "0.0";
+                return `${context.label}: ${fullValue(context.raw)} (${share}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    scrollToLatest();
+  }
+
+
+  // ---------- Send flow ----------
+  async function sendQuestion(question) {
+    isWaiting = true;
+    updateSendState();
+
+    if (welcome.isConnected) welcome.remove();
+    addUserMessage(question);
+    showThinking();
+
+    try {
+      const response = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: question })
+      });
+      if (!response.ok) throw new Error("Request failed");
+
+      const data = await response.json();
+      if (typeof data.answer !== "string" || data.answer.trim() === "") throw new Error("Empty answer");
+      form.classList.remove("is-error");
+      note.textContent = DEFAULT_NOTE;
+
+      hideThinking();
+      const bubble = addAssistantMessage("");
+
+      conversation.setAttribute("aria-busy", "true");
+
+      try {
+        await typeInto(bubble, data.answer);
+      } finally {
+        conversation.removeAttribute("aria-busy");
+      }
+
+      if (data.chart_spec?.show_chart && data.chart_rows?.length) {
+        addDynamicAnalyticsChart(
+          data.chart_spec,
+          data.chart_rows
+        );
+      }
+
+    } catch (error) {
+      // Technical details stay in the console, never shown to the customer
+      console.error("EcomAssist request error:", error);
+      hideThinking();
+      form.classList.add("is-error");
+      note.textContent = "The reply could not be loaded. Check your connection and try again.";
+      addAssistantMessage(ERROR_TEXT, true);
+    } finally {
+      isWaiting = false;
+      updateSendState();
+      input.focus();
+    }
+  }
+
+  function handleSubmit() {
+    const question = input.value.trim();
+    if (!question) {
+      note.textContent = "Please enter a question first.";
+      return;
+    }
+    if (isWaiting) return;
+
+    input.value = "";
+    autoResize();
+    note.textContent = DEFAULT_NOTE;
+    sendQuestion(question);
+  }
+
+  // ---------- Event listeners ----------
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    handleSubmit();
+  });
+
+  // Enter sends, Shift + Enter inserts a new line
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      handleSubmit();
+    }
+  });
+
+  input.addEventListener("input", () => {
+    autoResize();
+    updateSendState();
+    form.classList.remove("is-error");
+    if (input.value.trim() !== "") note.textContent = DEFAULT_NOTE;
+  });
+
+
+  
+  // Exit clears the conversation and resets the Flask session
+  exitBtn.addEventListener("click", async () => {
+    if (cancelTyping) {
+      cancelTyping();
+    } else if (isWaiting) {
+      return;
+    }
+
+    try {
+      // Clear the remembered order ID in the Flask session
+      const response = await fetch("/reset", {
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to reset chat session");
+      }
+
+      // Clear the conversation displayed on the page
+      conversation.innerHTML = "";
+      conversation.appendChild(welcome);
+
+      // Reset the input field
+      input.value = "";
+      autoResize();
+      updateSendState();
+      note.textContent = DEFAULT_NOTE;
+
+      // Return focus to the input field
+      input.focus();
+
+    } catch (error) {
+      console.error("EcomAssist reset error:", error);
+      alert("Could not reset the chat. Please try again.");
+    }
+  });
+
+
+  input.focus();
+</script>
+</body>
+</html>
