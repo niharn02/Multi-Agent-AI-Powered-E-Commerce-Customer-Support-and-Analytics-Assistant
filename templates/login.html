@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#101116">
+    <title>EcomAssist | Log in</title>
+    <style>
+        /* ---------- Design tokens (same as the dark chat page) ---------- */
+        :root {
+            color-scheme: dark;
+            --bg: #101116;
+            --surface: #171920;
+            --surface-raised: #1d2029;
+            --surface-soft: #232631;
+            --ink: #f1f0f7;
+            --muted: #a1a4b5;
+            --line: #303341;
+            --accent: #b6a1ff;
+            --accent-strong: #9a7bff;
+            --accent-soft: rgba(182, 161, 255, 0.13);
+            --error-bg: #2a1d27;
+            --error-ink: #ffb5c3;
+            --error-line: #67404e;
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 22px;
+            --sans: "Manrope", "Avenir Next", sans-serif;
+            --display: "Space Grotesk", "Manrope", sans-serif;
+            --mono: "DM Mono", monospace;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        html, body { margin: 0; min-height: 100%; }
+        html { background: var(--bg); }
+
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            color: var(--ink);
+            background: var(--bg);
+            font: 400 15px/1.65 var(--sans);
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+
+        /* Soft lavender glow, as on the chat page */
+        body::before {
+            content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse at 50% -18%, rgba(122, 95, 207, 0.16), transparent 55%),
+                radial-gradient(ellipse at 100% 110%, rgba(122, 95, 207, 0.10), transparent 50%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 35%);
+        }
+
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+        ::selection { color: #111116; background: var(--accent); }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+        }
+
+        /* ---------- Shell: brand panel + form panel ---------- */
+        .shell {
+            position: relative; z-index: 1;
+            width: min(960px, 100%);
+            display: grid;
+            grid-template-columns: 1.05fr 1fr;
+            overflow: hidden;
+            background: rgba(23, 25, 32, 0.88);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 18px 70px rgba(0, 0, 0, 0.35);
+            animation: rise 0.5s ease-out both;
+        }
+
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: none; }
+        }
+
+        /* Brand panel (left) */
+        .brand-panel {
+            position: relative; overflow: hidden;
+            padding: 44px 40px;
+            display: flex; flex-direction: column; justify-content: space-between; gap: 40px;
+            background:
+                radial-gradient(120% 90% at 0% 0%, rgba(154, 123, 255, 0.2), transparent 60%),
+                #1a1c25;
+            border-right: 1px solid var(--line);
+        }
+
+        /* Thin concentric rings fading out, bottom-right */
+        .brand-panel::before {
+            content: ""; position: absolute; width: 400px; height: 400px;
+            right: -170px; bottom: -170px; border-radius: 50%;
+            background: repeating-radial-gradient(circle, transparent 0 26px, rgba(182, 161, 255, 0.1) 26px 27px);
+            -webkit-mask-image: radial-gradient(circle, #000 30%, transparent 70%);
+            mask-image: radial-gradient(circle, #000 30%, transparent 70%);
+        }
+
+        .brand-panel > * { position: relative; z-index: 1; }
+
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand svg { width: 38px; height: 38px; flex: none; }
+        .brand-name { font: 700 1.08rem/1.15 var(--display); letter-spacing: -0.04em; }
+        .brand-sub { margin-top: 4px; color: var(--muted); font-size: 0.76rem; letter-spacing: 0.035em; line-height: 1.2; }
+
+        .brand-panel h2 {
+            margin: 0 0 26px; max-width: 15ch;
+            font: 600 clamp(1.8rem, 3vw, 2.3rem)/1.06 var(--display);
+            letter-spacing: -0.05em; text-wrap: balance;
+        }
+
+        .features { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+        .features li { display: flex; gap: 14px; align-items: flex-start; }
+
+        .feature-icon {
+            flex: none; width: 36px; height: 36px; border-radius: var(--radius-sm);
+            display: grid; place-items: center;
+            background: var(--surface-soft); border: 1px solid #343643;
+        }
+        .feature-icon svg { width: 18px; height: 18px; color: var(--accent); }
+
+        .features strong { display: block; font-size: 0.95rem; font-weight: 700; color: #f1f0f7; line-height: 1.4; }
+        .features div > span { display: block; margin-top: 2px; font-size: 0.86rem; color: var(--muted); line-height: 1.5; }
+
+        /* Form panel (right) */
+        .form-panel { padding: 48px 44px; display: flex; flex-direction: column; justify-content: center; }
+
+        .mobile-brand { display: none; align-items: center; gap: 10px; margin-bottom: 26px; }
+        .mobile-brand svg { width: 34px; height: 34px; }
+        .mobile-brand strong { font: 700 1.08rem/1.15 var(--display); letter-spacing: -0.04em; }
+
+        .eyebrow {
+            margin: 0 0 12px; color: var(--accent);
+            font: 500 0.75rem/1.4 var(--mono); letter-spacing: 0.12em; text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0; font: 600 clamp(1.7rem, 3vw, 2.1rem)/1.1 var(--display);
+            letter-spacing: -0.05em;
+        }
+        .lead { margin: 10px 0 26px; color: var(--muted); }
+
+        /* Error message */
+        .alert {
+            display: flex; gap: 10px; align-items: flex-start;
+            margin-bottom: 20px; padding: 12px 14px;
+            border-radius: 12px; border: 1px solid var(--error-line);
+            background: var(--error-bg); color: var(--error-ink);
+            font-size: 0.9rem;
+        }
+        .alert svg { width: 18px; height: 18px; flex: none; margin-top: 2px; }
+
+        /* Fields */
+        .field { margin-bottom: 18px; }
+        .field label { display: block; margin-bottom: 7px; color: #d6d2e5; font-size: 0.84rem; font-weight: 700; }
+
+        .input-wrap { position: relative; }
+        .input-wrap > svg {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            width: 18px; height: 18px; color: #8f91a2; pointer-events: none;
+        }
+
+        input[type="email"], input[type="password"], input[type="text"] {
+            width: 100%; height: 50px; padding: 0 46px 0 44px;
+            font: inherit; color: var(--ink);
+            background: var(--surface); border: 1px solid #3a3c49; border-radius: 13px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input::placeholder { color: #818494; }
+        input:focus { outline: 0; border-color: #8e78d9; box-shadow: 0 0 0 3px rgba(182, 161, 255, 0.1); }
+
+        /* Keep browser autofill dark instead of the default white */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+            -webkit-text-fill-color: var(--ink);
+            caret-color: var(--ink);
+            -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+            transition: background-color 9999s ease-out 0s;
+        }
+
+        .toggle {
+            position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+            width: 38px; height: 38px; border: 0; border-radius: var(--radius-sm);
+            background: transparent; color: #8f91a2; cursor: pointer;
+            display: grid; place-items: center;
+            transition: color 0.18s, background 0.18s;
+        }
+        .toggle:hover { color: var(--ink); background: rgba(255, 255, 255, 0.05); }
+        .toggle svg { width: 19px; height: 19px; }
+
+        .hint { margin: 7px 2px 0; font-size: 0.8rem; color: var(--error-ink); }
+        .hint[hidden] { display: none; }
+
+        /* Submit */
+        .submit {
+            width: 100%; min-height: 50px; margin-top: 8px;
+            border: 1px solid #a997ee; border-radius: 12px; cursor: pointer;
+            background: var(--accent); color: #17131f;
+            font: 800 0.95rem/1 var(--sans);
+            transition: transform 0.16s, background 0.16s, opacity 0.16s;
+        }
+        .submit:hover:not(:disabled) { background: #c7b8ff; transform: translateY(-1px); }
+        .submit:active:not(:disabled) { transform: translateY(0); }
+        .submit:disabled { opacity: 0.55; cursor: progress; }
+
+        .foot { margin: 22px 0 0; text-align: center; font-size: 0.78rem; color: #8f91a2; }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 860px) {
+            .shell { grid-template-columns: 1fr; max-width: 460px; }
+            .brand-panel { display: none; }
+            .mobile-brand { display: flex; }
+            .form-panel { padding: 36px 28px; }
+        }
+
+        @media (max-width: 420px) {
+            body { padding: 12px; font-size: 14px; }
+            .form-panel { padding: 30px 20px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .shell { animation: none; }
+            .submit, .toggle, input { transition: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Shared logo: shopping bag with a smile, same mark as the chat page -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+        <linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#A99AE8"/>
+            <stop offset="1" stop-color="#8875D4"/>
+        </linearGradient>
+        <symbol id="logo" viewBox="0 0 34 34">
+            <rect width="34" height="34" rx="10" fill="url(#brandGrad)"/>
+            <g fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9.5 13h15l-1.2 12h-12.6z"/>
+                <path d="M13.2 13v-1.4a3.8 3.8 0 0 1 7.6 0V13"/>
+                <path d="M14 19.2q3 2.6 6 0"/>
+            </g>
+        </symbol>
+    </defs>
+</svg>
+
+<main class="shell">
+
+    <!-- Brand panel: hidden on small screens -->
+    <aside class="brand-panel">
+        <div class="brand">
+            <svg viewBox="0 0 34 34" aria-hidden="true"><use href="#logo"/></svg>
+            <div>
+                <div class="brand-name">EcomAssist</div>
+                <div class="brand-sub">AI Customer Support</div>
+            </div>
+        </div>
+
+        <div>
+            <h2>Support that already knows your orders.</h2>
+            <ul class="features">
+                <li>
+                    <span class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5zM3 7.5 12 12l9-4.5M12 12v9"/></svg>
+                    </span>
+                    <div>
+                        <strong>Track every order</strong>
+                        <span>Live status and delivery dates for your purchases.</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+                    </span>
+                    <div>
+                        <strong>Returns and refunds</strong>
+                        <span>Start a return or check a refund in one conversation.</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+                    </span>
+                    <div>
+                        <strong>Understand your spending</strong>
+                        <span>Ask for charts of what you buy, month by month.</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Form panel -->
+    <section class="form-panel">
+        <div class="mobile-brand">
+            <svg viewBox="0 0 34 34" aria-hidden="true"><use href="#logo"/></svg>
+            <strong>EcomAssist</strong>
+        </div>
+
+        <p class="eyebrow">Account login</p>
+        <h1>Welcome back</h1>
+        <p class="lead">Log in to access your customer support assistant.</p>
+
+        {% if error %}
+        <div class="alert" role="alert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/></svg>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('login') }}" id="loginForm">
+            <div class="field">
+                <label for="email">Email address</label>
+                <div class="input-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 8 8 6 8-6"/></svg>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value="{{ email or '' }}"
+                        autocomplete="username"
+                        placeholder="you@example.com"
+                        required
+                    >
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="password">Password</label>
+                <div class="input-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        autocomplete="current-password"
+                        placeholder="Enter your password"
+                        required
+                    >
+                    <button type="button" class="toggle" id="togglePassword" aria-label="Show password" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+                <p class="hint" id="capsHint" role="status" hidden>Caps Lock is on.</p>
+            </div>
+
+            <button type="submit" class="submit" id="submitBtn">Log in</button>
+        </form>
+
+        <p class="foot">Need an account? Ask your store administrator.</p>
+    </section>
+</main>
+
+<script>
+    (function () {
+        var form = document.getElementById("loginForm");
+        var email = document.getElementById("email");
+        var password = document.getElementById("password");
+        var toggle = document.getElementById("togglePassword");
+        var capsHint = document.getElementById("capsHint");
+        var submitBtn = document.getElementById("submitBtn");
+
+        // Show or hide the password
+        toggle.addEventListener("click", function () {
+            var showing = password.type === "text";
+            password.type = showing ? "password" : "text";
+            toggle.setAttribute("aria-pressed", showing ? "false" : "true");
+            toggle.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+            password.focus();
+        });
+
+        // Warn when Caps Lock is on while typing the password
+        function checkCaps(event) {
+            if (event.getModifierState) {
+                capsHint.hidden = !event.getModifierState("CapsLock");
+            }
+        }
+        password.addEventListener("keydown", checkCaps);
+        password.addEventListener("keyup", checkCaps);
+        password.addEventListener("blur", function () { capsHint.hidden = true; });
+
+        // Prevent double submits and show progress
+        form.addEventListener("submit", function () {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Logging in...";
+        });
+
+        // Restore the button when the page is shown again from the back/forward cache
+        window.addEventListener("pageshow", function () {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Log in";
+        });
+
+        // Start in the right field: password if the email was kept after an error
+        (email.value ? password : email).focus();
+    })();
+</script>
+</body>
+</html>
