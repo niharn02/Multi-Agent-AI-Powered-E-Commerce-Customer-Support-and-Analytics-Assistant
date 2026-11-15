@@ -81,9 +81,9 @@ It uses a combination of LLM-powered agents, deterministic Python workflows and 
 
 ## Application Workflow
 
-The following diagram illustrates the actual application architecture, including Flask's direct workflows, LangGraph routing, specialised agents, database tools and frontend response handling.
+The following diagram illustrates the actual EcomAssist 2.0 architecture, including Flask-managed workflows, LangGraph routing, specialised nodes, database tools and analytics processing.
 
-![EcomAssist 2.0 Actual Application Workflow](docs/ecomassist_workflow.png)
+![EcomAssist 2.0 Workflow Architecture](docs/EcomAssist%202.0%20Workflow%20Architecture.png)
 
 ### Workflow Explanation
 
