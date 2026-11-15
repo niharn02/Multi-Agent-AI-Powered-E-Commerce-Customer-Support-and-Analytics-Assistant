@@ -2,92 +2,195 @@
 
 ## About the Project
 
-**EcomAssist 2.0 is an AI-powered e-commerce customer support chatbot that helps customers manage their shopping and order-related queries through natural language conversations.**
+**EcomAssist 2.0 is an AI-powered e-commerce customer support chatbot that helps customers manage shopping and order-related queries through natural language conversations.**
 
-In a typical e-commerce platform, customers may need to navigate multiple pages or contact customer support to track an order, request a return, register a complaint or find answers to common questions.
-
-EcomAssist aims to simplify this experience by bringing these activities into one conversational interface.
+Customers often need to navigate multiple pages or contact customer support to track orders, request returns, report problems or find answers to common questions. EcomAssist brings these activities together through a conversational interface.
 
 Customers can interact with the chatbot to:
 
-- Check order details and delivery status.
+- Retrieve order details and delivery information.
+- View their previous orders.
 - Check whether products are eligible for return.
 - Initiate return requests for eligible products.
 - Register complaints and check their status.
 - Ask frequently asked questions.
-- Explore their spending, order and product analytics.
+- Analyse their spending, orders and product purchases.
 
-The application uses a **multi-agent architecture** with LangChain and LangGraph. Different support and analytics capabilities are coordinated through a workflow that processes customer requests and directs them to the relevant functionality.
+The application combines **Flask, LangChain, LangGraph, Groq and PostgreSQL** to provide an integrated customer support and analytics experience.
 
-PostgreSQL provides the underlying customer and e-commerce data, while Groq provides access to the language model used by the application.
-
-The goal is to make e-commerce customer support more conversational, accessible and efficient.
-
-## Application Workflow
-
-The following diagram illustrates how a customer request moves through the EcomAssist application.
-
-![EcomAssist 2.0 Application Workflow](docs/ecomassist_workflow.png)
-
-### Workflow Overview
-
-1. **Customer authentication:** Customers log in using their registered email and password. Flask-Login manages authenticated sessions.
-2. **Message submission:** Customers submit questions through the chatbot interface.
-3. **Request processing:** Flask extracts relevant information, identifies common request types and maintains conversation state.
-4. **Workflow handling:** Order, return and complaint requests are processed through their respective application workflows. Other requests are passed to LangGraph for further routing.
-5. **Agent and tool execution:** The relevant workflow uses specialised agents and tools to retrieve information or perform supported operations.
-6. **Database interaction:** PostgreSQL supplies the required customer, order, product, payment, shipment and return information.
-7. **Response generation:** The application returns a conversational response to the customer.
-8. **Analytics visualisation:** For analytics requests, the backend also returns analytical results and chart specifications for frontend visualisation.
+It uses a combination of LLM-powered agents, deterministic Python workflows and database-backed tools to process customer requests.
 
 ## Key Features
 
 ### 1. Customer Authentication
 - Customer login using email and password.
 - Password hash verification.
-- Session-based authentication using Flask-Login.
+- Session management using Flask-Login.
 - Protected chatbot and customer-specific operations.
+- Active account validation.
 
 ### 2. Order Management
-- Retrieve order details.
-- Check order and delivery status.
+- Retrieve individual order details.
+- Check order and delivery information.
+- View a customer's order history.
 - Retrieve products associated with an order.
 - Support order-related follow-up questions.
 
-### 3. Return and Refund Assistance
+### 3. Return and Refund Management
 - Check return eligibility for individual products.
-- List orders containing products eligible for return.
-- Select a particular order and product.
-- Collect the reason for a return.
-- Create a return request after validating eligibility.
-- Check the status of existing return requests.
+- Retrieve orders containing return-eligible products.
+- Select an order and a specific product for return.
+- Collect the customer's reason for returning a product.
+- Recheck eligibility before creating a return.
+- Create return requests and provide confirmation details.
+- Retrieve existing return status information.
 
 ### 4. Complaint Management
-- Validate an order before registering a complaint.
+- Validate an order before accepting a complaint.
 - Check complaint eligibility.
-- Collect complaint details through a conversational workflow.
-- Prevent duplicate active complaints for an order.
-- Register complaints through the complaint workflow.
-- Retrieve existing complaint status.
+- Check for existing active complaints to prevent duplicate registrations.
+- Collect complaint descriptions through a conversational workflow.
+- Register complaints.
+- Retrieve complaint status using a complaint ID or order ID.
 
 ### 5. FAQ Assistance
-- Retrieve answers to frequently asked questions.
-- Use sentence-transformer embeddings for FAQ retrieval.
-- Use the FAQ data provided in `data/faqs.csv`.
+- Answer frequently asked questions.
+- Retrieve relevant FAQ information using semantic search.
+- Use Sentence Transformers to generate embeddings.
+- Use the FAQ data stored in `data/faqs.csv`.
 
 ### 6. Customer Analytics
 - Analyse customer spending patterns.
-- Explore order history and purchasing activity.
-- Retrieve product-related analytics.
-- Generate chart specifications based on analytical results.
+- Retrieve category-wise spending.
+- Analyse spending trends over time.
+- Retrieve top-purchased products.
+- Explore order history and order statistics.
+- Analyse orders over specified date ranges.
+- Generate chart specifications based on actual analytics results.
 - Return chart data for frontend visualisation.
 
 ### 7. Multi-Agent AI Architecture
-- Coordinate different support and analytics workflows.
-- Route general requests through LangGraph.
-- Use specialised agents and database-backed tools.
-- Maintain conversational context for multi-step operations.
-- Combine deterministic application logic with AI-driven request processing.
+- Use a supervisor node for request classification and routing.
+- Coordinate six specialised LangGraph workflow nodes.
+- Use LLM-powered FAQ and Complaint agents.
+- Execute deterministic Python workflows for order and return operations.
+- Use database-backed tools to retrieve and process customer information.
+- Maintain conversational context during multi-step interactions.
+
+---
+
+## Application Workflow
+
+The following diagram illustrates the actual application architecture, including Flask's direct workflows, LangGraph routing, specialised agents, database tools and frontend response handling.
+
+![EcomAssist 2.0 Actual Application Workflow](docs/ecomassist_workflow.png)
+
+### Workflow Explanation
+
+**Step 1 – Customer Authentication**
+
+Customers access the application through the login page. Flask-Login validates their account against the `customer_accounts` table, verifies the password hash and checks whether the account is active.
+
+After successful authentication, a customer session is established and the chatbot becomes accessible.
+
+**Step 2 – Customer Query Processing**
+
+The customer submits a message through the chatbot interface. Flask processes the request, extracts relevant identifiers such as order IDs and complaint IDs, and maintains conversation state using the session.
+
+**Step 3 – Direct Flask Workflows**
+
+Some operations are handled directly by Flask before invoking LangGraph.
+
+These include:
+
+- Multi-step return requests, including order selection, product selection, reason collection, eligibility rechecking and return creation.
+- Complaint registration, including order validation, complaint eligibility checks, duplicate complaint checks and complaint description collection.
+
+**Step 4 – LangGraph Workflow**
+
+Requests that are not completed through the direct Flask workflows are passed to the compiled LangGraph workflow.
+
+The graph starts with the Supervisor Node, which classifies the request and routes it to one of six destination nodes.
+
+**Step 5 – Specialised Workflow Nodes**
+
+The compiled LangGraph workflow contains the following six nodes:
+
+| Node | Responsibility |
+|---|---|
+| Order Node | Retrieves order details and associated return information using database tools. |
+| My Orders Node | Retrieves and summarises the authenticated customer's order history. |
+| FAQ Node | Uses the FAQ agent to retrieve relevant answers through semantic search. |
+| Complaint Node | Uses the Complaint agent to handle complaint-related requests and follow-ups. |
+| Return/Refund Node | Handles return and refund status enquiries and return-related operations. |
+| Analytics Node | Executes analytics tools to retrieve customer spending, order and product information. |
+
+**Step 6 – Database and Tool Execution**
+
+The relevant workflow uses its database-backed tools to retrieve or process information from PostgreSQL.
+
+The database contains customer accounts, customers, orders, order items, products, payments, shipments, returns and complaints.
+
+The FAQ functionality also uses `data/faqs.csv` and Sentence Transformer embeddings for semantic retrieval.
+
+**Step 7 – Response Generation**
+
+The graph returns the result to Flask.
+
+Flask formats the response and returns it to the frontend. For analytics requests, it additionally generates a chart specification and extracts the corresponding chart rows.
+
+**Step 8 – Frontend Visualisation**
+
+The chatbot displays the conversational answer. When suitable analytics chart information is available, the frontend uses Chart.js to render the visualisation.
+
+---
+
+## Understanding the Multi-Agent Architecture
+
+EcomAssist combines LLM-powered agents with deterministic workflow nodes. Not every graph node is an independent AI agent.
+
+### Supervisor Node
+
+The Supervisor Node uses a Groq-hosted language model with structured output and routing rules to classify customer requests.
+
+It identifies one of the following six supported intents:
+
+| Intent | Destination |
+|---|---|
+| `order` | Order Node |
+| `my_orders` | My Orders Node |
+| `faq` | FAQ Node |
+| `return_refund` | Return/Refund Node |
+| `complaint` | Complaint Node |
+| `analytics` | Analytics Node |
+
+The supervisor uses explicit intent information when provided by Flask, deterministic phrase and ordinal rules where applicable, and model-based classification for other requests.
+
+### LLM-Powered Agents
+
+The application defines three agents in `agents/order_agents.py`:
+
+- **Order Support Agent:** Defined with order-related tools, but not currently connected to the compiled LangGraph workflow.
+- **FAQ Agent:** Used by the FAQ Node to answer questions using FAQ retrieval.
+- **Complaint Agent:** Used by the Complaint Node to process complaint-related requests.
+
+### Deterministic Workflow Nodes
+
+The compiled graph also contains Python workflow nodes that execute application logic and database tools directly.
+
+These include:
+
+- Order Node.
+- My Orders Node.
+- Return/Refund Node.
+
+The Analytics Node uses a custom tool-calling workflow to select and execute relevant analytics tools.
+
+**Architecture clarification:** Although an Order Support Agent is defined in the project, the compiled graph currently uses a dedicated `order_node()` function rather than invoking that agent. The active Order Node executes Python logic and calls database tools directly.
+
+Similarly, some return and complaint registration steps are handled directly in Flask before LangGraph is invoked.
+
+---
 
 ## Technology Stack
 
@@ -102,10 +205,14 @@ The following diagram illustrates how a customer request moves through the EcomA
 | Configured Language Model | `openai/gpt-oss-20b` |
 | Database | PostgreSQL |
 | Database Driver | Psycopg 3 |
+| Environment Configuration | python-dotenv |
 | Data Processing | Pandas, NumPy |
-| FAQ Retrieval | Sentence Transformers |
+| FAQ Semantic Search | Sentence Transformers |
+| Data Validation | Python |
 | Frontend | HTML, CSS, JavaScript |
 | Chart Visualisation | Chart.js |
+
+---
 
 ## Project Structure
 
@@ -113,27 +220,46 @@ The following diagram illustrates how a customer request moves through the EcomA
 Multi-Agent-AI-Powered-E-Commerce-Customer-Support-and-Analytics-Assistant/
 │
 ├── agents/
+│   ├── __init__.py
 │   └── order_agents.py
 │
 ├── data/
-│   └── faqs.csv
+│   ├── __init__.py
+│   ├── faqs.csv
+│   ├── inspect_dataset.py
+│   └── validate_dataset.py
 │
 ├── docs/
 │   ├── DATABASE_SETUP.md
+│   ├── REPOSITORY_CLEANUP.md
 │   ├── design.md
 │   ├── ux-contract.md
 │   └── ecomassist_workflow.png
 │
 ├── graph/
+│   ├── __init__.py
 │   └── graph.py
 │
+├── scripts/
+│   ├── __init__.py
+│   ├── create_test_account.py
+│   ├── reset_test_password.py
+│   │
+│   └── manual_checks/
+│       ├── __init__.py
+│       ├── check_analytics.py
+│       └── check_database_tables.py
+│
 ├── templates/
+│   ├── design.md
 │   ├── ecom_index.html
-│   └── login.html
+│   ├── login.html
+│   └── ux-contract.md
 │
 ├── tools/
-│   ├── order_tools.py
-│   └── analytics_tools.py
+│   ├── __init__.py
+│   ├── analytics_tools.py
+│   └── order_tools.py
 │
 ├── app.py
 ├── db.py
@@ -144,15 +270,21 @@ Multi-Agent-AI-Powered-E-Commerce-Customer-Support-and-Analytics-Assistant/
 └── README.md
 ```
 
+---
+
 ## Requirements
 
+Before running the application, make sure you have:
+
 - Python 3.11 or newer.
-- PostgreSQL.
+- PostgreSQL installed and running.
 - A Groq API key.
-- The EcomAssist PostgreSQL database and required tables.
-- The dataset used by the application.
+- The required PostgreSQL database and tables.
+- The dataset files required by the application.
 
 Python 3.12 is a sensible starting point. Other Python versions may require dependency compatibility checks.
+
+---
 
 ## Installation and Setup
 
@@ -186,6 +318,8 @@ source .venv/bin/activate
 
 ### 3. Install dependencies
 
+Upgrade pip and install the required packages:
+
 ```bash
 python -m pip install --upgrade pip
 
@@ -210,23 +344,37 @@ cp .env.example .env
 
 Open `.env` and provide your own credentials.
 
-The application uses the following configuration:
+The application uses the following environment variables:
 
 | Variable | Purpose |
 |---|---|
-| `GROQ_API_KEY` | API key for the Groq language model |
+| `GROQ_API_KEY` | API key for the Groq-hosted language model |
 | `DB_HOST` | PostgreSQL host |
 | `DB_PORT` | PostgreSQL port |
-| `DB_NAME` | Database name |
+| `DB_NAME` | PostgreSQL database name |
 | `DB_USER` | PostgreSQL username |
 | `DB_PASSWORD` | PostgreSQL password |
 | `FLASK_SECRET_KEY` | Flask session signing key |
-| `COOKIE_SECURE` | Enables secure cookies over HTTPS |
-| `FLASK_DEBUG` | Controls Flask debug mode for local development |
+| `COOKIE_SECURE` | Enables secure cookies when deployed over HTTPS |
+| `FLASK_DEBUG` | Controls Flask debug mode during local development |
 
-Refer to `.env.example` for the configuration template.
+Example configuration:
 
-Never commit your actual `.env` file or expose API keys and database credentials.
+```env
+GROQ_API_KEY=your_groq_api_key
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=ecomassist_v2
+DB_USER=postgres
+DB_PASSWORD=your_database_password
+
+FLASK_SECRET_KEY=your_long_random_secret
+COOKIE_SECURE=false
+FLASK_DEBUG=false
+```
+
+Never upload your actual `.env` file or expose API keys and database credentials.
 
 ### 5. Configure PostgreSQL
 
@@ -236,13 +384,49 @@ EcomAssist uses a PostgreSQL database named:
 ecomassist_v2
 ```
 
-The database must contain the tables and records expected by the application.
+The application expects tables for:
 
-Refer to [DATABASE_SETUP.md](docs/DATABASE_SETUP.md) for the database and dataset setup information.
+- `customer_accounts`
+- `customers`
+- `orders`
+- `order_items`
+- `products`
+- `payments`
+- `shipments`
+- `returns`
+- `complaints`
 
-**Important:** The repository does not currently include a complete database schema or migration script. The database must be created and populated separately before all application features can be tested.
+The database must be configured and populated before the application can fully operate.
 
-### 6. Run the application
+Refer to [Database Setup](docs/DATABASE_SETUP.md) for further information.
+
+**Important:** The repository does not currently contain a complete SQL schema or migration script. You must obtain the original database schema or create a reviewed schema based on the SQL queries used by the application and tools.
+
+### 6. Prepare the dataset
+
+The FAQ functionality reads:
+
+```text
+data/faqs.csv
+```
+
+The larger e-commerce dataset CSV exports are intentionally excluded from the repository.
+
+Download the required dataset files from their original source, verify the applicable licence and attribution requirements, and place the files in the local `data/` directory before importing them into PostgreSQL.
+
+The repository includes dataset inspection and validation utilities:
+
+```bash
+python data/inspect_dataset.py
+```
+
+```bash
+python data/validate_dataset.py
+```
+
+Run these utilities after placing the required dataset files in `data/`.
+
+### 7. Run the application
 
 From the project root, execute:
 
@@ -252,69 +436,96 @@ python app.py
 
 Open the local address printed by Flask in your browser.
 
-Debug mode is disabled by default. Enable it only for local development, never in production.
+Flask debug mode is disabled by default. Enable it only for local development and never in production.
 
-## Database and Dataset
+---
 
-The application uses PostgreSQL to store and retrieve information related to:
+## Utility and Testing Scripts
 
-- Customer accounts.
-- Customers.
-- Orders.
-- Order items.
-- Products.
-- Payments.
-- Shipments.
-- Returns.
-- Complaints.
+The project includes additional scripts for development and database checks.
 
-The project uses the following dataset:
+### Account Management
 
-**Indian E-Commerce Sales & Customer Analytics**
+Create a test customer account:
 
-- Publisher: `shiyalkishan01`
-- Platform: Kaggle
-- Dataset: [Indian E-Commerce Sales & Customer Analytics](https://www.kaggle.com/datasets/shiyalkishan01/indian-e-commerce-sales-and-customer-analytics)
+```bash
+python -m scripts.create_test_account
+```
 
-The dataset CSV exports are not included in this repository. Download the required files from the original Kaggle page and place them in the local `data/` directory, following the database setup instructions.
+Reset a test customer's password:
 
-The dataset's licence and redistribution conditions must be checked before redistributing its files. Public availability does not automatically mean that a dataset is public domain.
+```bash
+python -m scripts.reset_test_password
+```
 
-`data/faqs.csv` is included because the FAQ functionality uses it.
+These scripts require a configured PostgreSQL database and should only be used for controlled development or administrative purposes.
+
+### Manual Database and Analytics Checks
+
+Check the database tables:
+
+```bash
+python -m scripts.manual_checks.check_database_tables
+```
+
+Run analytics checks:
+
+```bash
+python -m scripts.manual_checks.check_analytics
+```
+
+Run these scripts from the project root with the required database configuration.
+
+---
 
 ## Security Considerations
 
 - Never commit `.env` files, API keys or database credentials.
 - Use a strong and unique Flask secret key.
-- Enable secure cookies when deploying over HTTPS.
-- Do not expose customer information, database backups or private dataset exports.
-- Maintain customer authorisation checks for customer-specific operations.
 - Keep Flask debug mode disabled in production.
+- Enable secure session cookies when deploying over HTTPS.
+- Do not upload real customer records, private database exports or backups.
+- Maintain customer authorisation checks for customer-specific operations.
+- Use appropriately licensed datasets and follow their redistribution conditions.
+
+---
 
 ## Current Verification Status
 
-The Python source files were syntax-checked during repository preparation. This does not confirm that the complete application starts successfully or that all database-backed workflows work.
+The Python source files were syntax-checked during repository preparation. This does not establish that the complete application starts successfully or that every database-backed workflow works correctly.
 
-Full application testing requires:
+Full application verification requires:
 
 - A configured PostgreSQL database.
 - The expected database schema and records.
+- Correct environment variables.
 - Installed Python dependencies.
 - A valid Groq API key.
-- Verification of the customer support and analytics workflows.
+- Testing of login, order support, returns, complaints, FAQ retrieval and analytics workflows.
+
+The project should be tested in a fresh local environment before being considered production-ready.
+
+---
 
 ## Future Enhancements
 
 Potential areas for further development include:
 
+- Connecting the defined Order Support Agent to the compiled LangGraph workflow.
 - Expanding specialised agent capabilities.
-- Adding more customer support workflows.
 - Improving conversational context and memory.
+- Adding further customer support workflows.
 - Enhancing analytics and reporting.
 - Exploring Model Context Protocol (MCP) integration.
 
+---
+
 ## Licence
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License**.
+
+Copyright (c) 2026 Nihar Arun Nandanwar (niharn02).
+
+See the [LICENSE](LICENSE) file for the complete licence terms.
 
 The MIT License applies to the project's original code. Third-party libraries, language models and external datasets remain subject to their respective licences and terms.
