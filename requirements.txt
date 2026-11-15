@@ -1,0 +1,21 @@
+# Web application
+Flask>=3.0,<4.0
+Flask-Login>=0.6,<1.0
+Werkzeug>=3.0,<4.0
+
+# Database and environment configuration
+psycopg[binary]>=3.2,<4.0
+python-dotenv>=1.0,<2.0
+
+# LangChain, LangGraph and Groq integration
+langchain>=1.0,<2.0
+langchain-core>=1.0,<2.0
+langchain-groq>=1.0,<2.0
+langgraph>=1.0,<2.0
+pydantic>=2.0,<3.0
+
+# Data processing, FAQ embeddings and date utilities
+pandas>=2.2,<4.0
+numpy>=1.26,<3.0
+sentence-transformers>=3.0,<6.0
+python-dateutil>=2.9,<3.0
